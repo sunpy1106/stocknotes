@@ -54,8 +54,10 @@ def get_historical_prices(symbol, start_date, end_date):
 	user_agent = 'Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.10) Gecko/20100915 Ubuntu/10.04 (lucid) Firefox/3.6.10'
 	request = urllib2.Request(url)
 	request.add_header('User-agent', user_agent )
-	days = urllib2.urlopen(request).readlines()
+	response = urllib2.urlopen(request)
+	days = response.readlines()
 	data = [day[:-2].split(',') for day in days]
 	data = data[1:]
+	response.close()
 	return data
 

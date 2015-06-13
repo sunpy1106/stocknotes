@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import SinaData
-import threadpool
 import YahooData
 import StockDataMart
 import datetime
+import multiprocessing
 
 def stockDataCollection(stockId,market):
 	maxDate = StockDataMart.getMaxDate(stockId,market)
@@ -16,17 +16,16 @@ def stockDataCollection(stockId,market):
 	print today
 	print yesterday
 	if maxDate is None :
-		dataInfo = YahooData.getHistoricalData(stockId,market,'2015-06-05',today)	
+		dataInfo = YahooData.getHistoricalData(stockId,market,'2014-06-01',today)	
 	elif maxDate < yesterday :
 		dataInfo = YahooData.getHistoricalData(stockId,market,maxDate,yesterday)
-	elif maxDate < today :
+	if max(map(len,dataInfo)) > 0:
+		updateStockData(stockId,market,stockName,dataInfo)
+	maxDate = StockDataMart.getMaxDate(stockId,market)
+	if maxDate == yesterday :
 		dataInfo = SinaData.getCurrentData(stockId,market)
-	else :
-		return
-
-	print dataInfo
-	print type(dataInfo)
-	updateStockData(stockId,market,stockName,dataInfo)
+		if max(map(len,dataInfo)) > 0:
+			updateStockData(stockId,market,stockName,dataInfo)
 
 def  updateStockData(stockId,market,stockName,dataInfo):
 	for curData in dataInfo:
@@ -41,9 +40,13 @@ def  updateStockData(stockId,market,stockName,dataInfo):
 
 def dataCollection():
 	stockList = StockDataMart.getAllStocks()
-	pool = threadpool.ThreadPool(10)
-	reqs = threadpool.makeRequest(stockDataCollection,stockList)	
-	[pool.putRequest(req)  for req in reqs]
-	pool.wait()
+	pool_size=multiprocessing.cpu_count()*2
+	pool=multiprocessing.Pool(processes=pool_size)
+	for rows in stockList:
+		stockId = rows[0]
+		market = rows[1]
+		result = pool.apply_async(stockDataCollection,(stockId,market))
+	pool.close()
+	pool.join()
 
 

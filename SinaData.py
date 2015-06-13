@@ -17,6 +17,7 @@ def request(stockId, market):
 	stockInfo = "hq_str_" + stockcode
 	stockdata = eval(stockInfo)
 	stockdata =  stockdata.split(",")
+	response.close()
 	return stockdata
 
 
